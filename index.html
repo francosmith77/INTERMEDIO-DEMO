@@ -66,6 +66,7 @@
         <button data-cat="todo" class="pill active">Todo</button>
         <button data-cat="burgers" class="pill">Burgers</button>
         <button data-cat="pizzas" class="pill">Pizzas</button>
+        <button data-cat="milanesas" class="pill">Milanesas</button>
         <button data-cat="sides" class="pill">Acompañamientos</button>
         <button data-cat="bebidas" class="pill">Bebidas</button>
         <button data-cat="postres" class="pill">Postres</button>
@@ -111,6 +112,25 @@
             <div class="mt-2 flex items-center justify-between">
               <span class="text-lg font-bold text-white">$6.000</span>
               <button class="btn !py-2 !px-3 text-sm" data-config="p1">Configurar</button>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CARD: Milanesa Napolitana -->
+      <article class="group card data-[hidden=true]:hidden" data-category="milanesas" data-id="m1">
+        <div class="relative h-60 sm:h-64">
+          <img src="img/milanesa-napo.jpg" alt="Milanesa Napolitana" class="w-full h-full object-cover">
+          <div class="absolute top-3 left-3 flex gap-2">
+            <span class="badge">🍽️ Clásico</span>
+          </div>
+          <div class="img-grad absolute inset-0"></div>
+          <div class="absolute bottom-3 left-3 right-3">
+            <h3 class="text-xl font-extrabold title-yellow">Milanesa Napolitana</h3>
+            <p class="muted text-sm">Milanesa con salsa, muzza y jamón. Opciones con guarnición.</p>
+            <div class="mt-2 flex items-center justify-between">
+              <span class="text-lg font-bold text-white">$6.800</span>
+              <button class="btn !py-2 !px-3 text-sm" data-config="m1">Configurar</button>
             </div>
           </div>
         </div>
@@ -221,7 +241,7 @@
       <div class="p-4 border-b flex items-center justify-between" style="border-color:var(--border);">
         <div>
           <h3 id="cfgTitle" class="text-xl font-extrabold title-yellow">Configurar</h3>
-          <p id="cfgDesc" class="text-sm" style="color:var(--text); opacity:.92">Elegí opciones</p>
+          <p id="cfgDesc" class="text-sm" style="color:var(--text); opacity:.92">Personalizá tu pedido</p>
         </div>
         <button class="btn-outline" value="cancel">Cerrar</button>
       </div>
@@ -282,7 +302,7 @@
     Demo Intermedio (Dark) • Modificadores + Combos + WhatsApp • Hecho para antojar 😋
   </footer>
 
-  <!-- SCRIPT (idéntico a la demo 2 anterior, solo cambia estilos) -->
+  <!-- SCRIPT (corregido: SIEMPRE muestra productos, sin filtrar por horario) -->
   <script>
     // ======= CONFIG =======
     const BRAND_NAME = "Demo Restaurante Pro";
@@ -294,35 +314,42 @@
     const CATALOG = {
       b1: {
         id:"b1", name:"Burger Doble", base:5200, category:"burgers",
-        schedule:{ start:"11:00", end:"23:45" }, doneness:true,
+        schedule:null, doneness:true,
         sizes:[ {name:"Simple",delta:-900},{name:"Doble",delta:0,default:true},{name:"Triple",delta:1200} ],
         extras:[ {name:"+Queso",price:400},{name:"+Bacon",price:600},{name:"+Huevo",price:300},{name:"Sin cebolla",price:0} ],
         upsell:{ bundleName:"Combo Clásico", items:[{id:"s1",qty:1},{id:"d1",qty:1}], promoPrice:2400 }
       },
       p1: {
         id:"p1", name:"Pizza Muzzarella", base:6000, category:"pizzas",
-        schedule:{ start:"19:00", end:"23:59" }, doneness:false,
+        schedule:null, doneness:false,
         sizes:[ {name:"8 porciones",delta:0,default:true},{name:"12 porciones",delta:1800} ],
         extras:[ {name:"+Aceitunas extra",price:300},{name:"+Muzza extra",price:700},{name:"Mitad y mitad",price:500} ],
         upsell:null
       },
+      m1: {
+        id:"m1", name:"Milanesa Napolitana", base:6800, category:"milanesas",
+        schedule:null, doneness:false,
+        sizes:[ {name:"Sola",delta:0,default:true},{name:"Con guarnición",delta:900} ],
+        extras:[ {name:"+Huevo frito",price:400},{name:"+Jamón extra",price:600},{name:"+Queso extra",price:500} ],
+        upsell:null
+      },
       s1: {
         id:"s1", name:"Papas Cheddar", base:3400, category:"sides",
-        schedule:{ start:"11:00", end:"23:59" }, doneness:false,
+        schedule:null, doneness:false,
         sizes:[ {name:"Chicas",delta:-500},{name:"Medianas",delta:0,default:true},{name:"Grandes",delta:700} ],
         extras:[ {name:"+Bacon",price:600},{name:"+Verdeo extra",price:200} ],
         upsell:null
       },
       d1: {
         id:"d1", name:"Gaseosa 500 ml", base:1500, category:"bebidas",
-        schedule:{ start:"10:00", end:"23:59" }, doneness:false,
+        schedule:null, doneness:false,
         sizes:[ {name:"350 ml",delta:-300},{name:"500 ml",delta:0,default:true},{name:"1 L",delta:900} ],
         extras:[ {name:"Sin hielo",price:0} ],
         upsell:null
       },
       ds1: {
         id:"ds1", name:"Cheesecake", base:3100, category:"postres",
-        schedule:{ start:"10:00", end:"23:59" }, doneness:false,
+        schedule:null, doneness:false,
         sizes:[ {name:"Porción",delta:0,default:true} ],
         extras:[ {name:"Salsa extra frutos rojos",price:300} ],
         upsell:null
@@ -331,21 +358,18 @@
 
     // ======= UTILS =======
     const fmt = (n) => new Intl.NumberFormat('es-AR',{style:'currency', currency:CURRENCY}).format(n);
-    const nowStr = ()=>{ const d=new Date(); return d.toTimeString().slice(0,5); };
-    function withinSchedule(sch){ if(!sch) return true; const t=nowStr(); return t>=sch.start && t<=sch.end; }
+    const pushEvent = (name, params={}) => { window.dataLayer.push({ event:name, ...params }); };
 
     // ======= STATE =======
     const CART = { items:[], total:0 };
-    const pushEvent = (name, params={}) => { window.dataLayer.push({ event:name, ...params }); };
 
-    // ======= FILTROS =======
+    // ======= FILTROS (sin horarios: siempre visible) =======
     function applyCategory(cat){
       document.querySelectorAll('#grid article').forEach(card=>{
         const id = card.getAttribute('data-id');
         const prod = CATALOG[id];
         const okCat = (cat==='todo' || prod?.category===cat);
-        const okTime = withinSchedule(prod?.schedule);
-        card.dataset.hidden = (okCat && okTime) ? "false" : "true";
+        card.dataset.hidden = okCat ? "false" : "true"; // nunca ocultamos por horario en la demo
       });
       document.querySelectorAll('nav .pill').forEach(p=>p.classList.remove('active'));
       document.querySelector(`nav .pill[data-cat="${cat}"]`)?.classList.add('active');
@@ -356,6 +380,7 @@
         pushEvent('filter_category',{ category:btn.getAttribute('data-cat') });
       });
     });
+    // init
     applyCategory('todo');
 
     // ======= MODALES =======
